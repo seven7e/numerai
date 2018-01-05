@@ -5,6 +5,7 @@ import sys
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn.decomposition import PCA
 
 data_dir = '/home/stone/data/numerai/tour88'
 
@@ -24,7 +25,25 @@ def main():
     #plot_corr_X(X, y)
     #plot_corr_Xy(X, y)
 
-    boxplot(X)
+    #boxplot(X)
+
+    cal_pca(X)
+
+def cal_pca(X):
+    #pca = PCA(n_components=2)
+    pca = PCA()
+    pca.fit(X)
+    print('PCA analysis with {}'.format(pca))
+    log = np.log
+    print('explained variance: ', pca.explained_variance_)
+    plt.plot(log(pca.explained_variance_))
+    plt.show()
+    print('explained variance ratio: ', pca.explained_variance_ratio_)
+    plt.plot(log(pca.explained_variance_ratio_))
+    plt.show()
+    print('singular values:', pca.singular_values_)
+    plt.plot(log(pca.singular_values_))
+    plt.show()
 
 def boxplot(X):
     X.boxplot()
