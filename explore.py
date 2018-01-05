@@ -4,6 +4,7 @@
 import sys
 import pandas as pd
 import numpy as np
+from numpy.random import rand, randn
 import matplotlib.pyplot as plt
 from sklearn.decomposition import PCA
 
@@ -19,13 +20,15 @@ def main():
     X = training_data[features]
     y = training_data["target"]
 
+    X = pd.DataFrame(randn(*X.shape))
     print(X.head())
-    #print(X.describe())
+    print(X.describe())
 
-    #plot_corr_X(X, y)
+    boxplot(X)
+    plot_hist(X, y)
+
+    plot_corr_X(X, y)
     #plot_corr_Xy(X, y)
-
-    #boxplot(X)
 
     cal_pca(X)
 
