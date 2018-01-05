@@ -1,0 +1,9 @@
+*.swp
+*.swo
+*.swn
+*~
+_build
+
+*.docdir
+
+predict*.csv
