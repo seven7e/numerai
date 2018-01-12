@@ -8,8 +8,11 @@ To get started, install the required packages: pip install pandas, numpy, sklear
 import pandas as pd
 import numpy as np
 from sklearn import metrics, preprocessing, linear_model
+from sklearn.preprocessing import PolynomialFeatures
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.model_selection import KFold, RepeatedKFold
+from sklearn import svm
+from sklearn.pipeline import Pipeline
 
 data_dir = '/home/stone/data/numerai/tour88'
 thr = 0.5
@@ -27,11 +30,12 @@ def main():
     # Transform the loaded CSV data into numpy arrays
     features = [f for f in list(training_data) if "feature" in f]
 
+    training_data = training_data.sample(frac=0.1)
+
     X = training_data[features].as_matrix()
     y = training_data["target"].as_matrix()
 
     # This is your model that will learn to predict
-    #model = linear_model.LogisticRegression(n_jobs=-1)
     model = RandomForestClassifier(
             max_depth=None,
             #max_depth=5,
@@ -41,19 +45,37 @@ def main():
 
     model = AdaBoostClassifier()
 
-    build_model(model, X, y)
+    model = svm.SVC(kernel='poly', gamma=1, probability=True)
+    #model = svm.SVC(kernel='linear', gamma=0.1, probability=True)
+    model = svm.SVC(kernel='rbf', gamma=1, probability=True)
 
-def build_model(model, X, y):
+    model = Pipeline([('poly', PolynomialFeatures(degree=1, include_bias=False)),
+        ('logistic', linear_model.LogisticRegression(fit_intercept=True))])
+
+    model = linear_model.LogisticRegression(n_jobs=-1)
+
+    print('------------ do cross validation ----------------')
+    cross_validate(model, X, y, k=5)
+
+    print('-------------- train and evaluate on whole dataset ------------------')
+    train_model(model, X, y)
+    pred_eval_one(model, X, y)
+
+    print("---------------- Predicting ------------------")
+    pred = predict(model, prediction_data, features=features)
+    write_result(pred)
+
+def cross_validate(model, X, y, k=5):
     print('Using model: {}'.format(model))
 
     num_samples = X.shape[0]
 
     random_state = 12883823
-    rkf = RepeatedKFold(n_splits=5, n_repeats=1, random_state=random_state)
+    rkf = RepeatedKFold(n_splits=k, n_repeats=1, random_state=random_state)
     scores_train = []
     scores_test = []
     for iter_num, (train_index, test_index) in enumerate(rkf.split(X, y)):
-        print('-------------- iteration {} -------------'.format(iter_num))
+        print('--------- iteration {} ---------'.format(iter_num))
         X_train = X[train_index]
         y_train = y[train_index]
         X_test = X[test_index]
@@ -65,49 +87,62 @@ def build_model(model, X, y):
 
         print("Training...")
         # Your model is trained on the training_data
-        model.fit(X_train, y_train)
+        train_model(model, X_train, y_train)
 
         score = eval_model(model, X_train, y_train, X_test, y_test)
         scores_train.append(score[0])
         scores_test.append(score[1])
 
-    print("Predicting...")
+def train_model(model, X, y):
+    model.fit(X, y)
+
+def predict(model, prediction_data, features):
     # Your trained model is now used to make predictions on the numerai_tournament_data
     # The model returns two columns: [probability of 0, probability of 1]
     # We are just interested in the probability that the target is 1.
     x_prediction = prediction_data[features]
-    ids = prediction_data["id"]
     y_prediction = model.predict_proba(x_prediction)
     results = y_prediction[:, 1]
+
+    validation_index = prediction_data['data_type'] == 'validation'
+    y_val = prediction_data['target'].as_matrix()[validation_index]
+    y_pred_val = results[validation_index]
+    print('Evaluating model on validation set')
+    score_test = eval_one(y_val, y_pred_val)
+
+    ids = prediction_data["id"]
+    results_df = pd.DataFrame(data={'probability':results})
+    joined = pd.DataFrame(ids).join(results_df)
+
+    return joined
 
 def eval_model(model, X_train, y_train, X_test, y_test):
     print('Evaluating model...')
     print('train set:')
-    score_train = eval_one(model, X_train, y_train)
+    score_train = pred_eval_one(model, X_train, y_train)
     print('test set:')
-    score_test = eval_one(model, X_test, y_test)
+    score_test = pred_eval_one(model, X_test, y_test)
     return score_train, score_test
 
-def eval_one(model, X, y):
+def pred_eval_one(model, X, y):
     prob = model.predict_proba(X)
     prob_pos = prob[:, 1]
-    y_pred = prob_pos > thr
-    ll = metrics.log_loss(y, prob)
+    eval_one(y, prob_pos)
+
+def eval_one(y_true, y_prob):
+    y_pred = y_prob > thr
+    ll = metrics.log_loss(y_true, y_prob)
     print('log loss: {}'.format(ll))
-    auc = metrics.roc_auc_score(y, prob_pos)
+    auc = metrics.roc_auc_score(y_true, y_prob)
     print('AUC: {}'.format(auc))
-    acc = metrics.accuracy_score(y, y_pred)
+    acc = metrics.accuracy_score(y_true, y_pred)
     print('accuracy: {}'.format(acc))
     return (ll, auc, acc)
 
-def write_result(ids, results):
-
-    results_df = pd.DataFrame(data={'probability':results})
-    joined = pd.DataFrame(ids).join(results_df)
-
-    #print("Writing predictions to predictions.csv")
+def write_result(results):
+    print("Writing predictions to predictions.csv")
     # Save the predictions out to a CSV file
-    #joined.to_csv("predictions.csv", index=False)
+    results.to_csv("predictions.csv", index=False)
     # Now you can upload these predictions on numer.ai
 
 
