@@ -7,3 +7,11 @@ _build
 *.docdir
 
 predict*.csv
+
+*.pyc
+__pycache__
+
+*logs
+*log
+
+tour*_model
