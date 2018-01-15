@@ -63,7 +63,9 @@ class NNModel(object):
                 W1 = tf.Variable(tf.random_normal([last_layer_out_size, hsize]), name='W' + s)
                 b1 = tf.Variable(tf.random_normal([hsize]), name='b' + s)
                 tmp = tf.matmul(last_layer_out, W1) + b1
-                h1 = tf.nn.relu(tmp)
+                # h1 = tf.nn.relu(tmp)
+                h1 = tf.nn.sigmoid(tmp)
+                # h1 = tf.nn.tanh(tmp)
                 self._hidden_layers.append((h1, W1, b1))
                 last_layer_out = h1
                 last_layer_out_size = hsize
@@ -111,8 +113,17 @@ class NNModel(object):
 
     def build_trainer(self):
         with tf.name_scope('train'):
-            # train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-            self.train_step = tf.train.AdamOptimizer().minimize(self.cross_entropy)
+            # opt = tf.train.GradientDescentOptimizer(0.5)
+            opt = tf.train.AdadeltaOptimizer()
+            # opt = tf.train.AdagradOptimizer()
+            # opt = tf.train.AdagradDAOptimizer()
+            # opt = tf.train.MomentumOptimizer()
+            # opt = tf.train.AdamOptimizer()
+            # opt = tf.train.FtrlOptimizer()
+            # opt = tf.train.ProximalGradientDescentOptimizer()
+            # opt = tf.train.ProximalAdagradOptimizer()
+            # opt = tf.train.RMSPropOptimizer(0.5)
+            self.train_step = opt.minimize(self.cross_entropy)
 
     def build_summarier(self, sess):
         tf.summary.scalar('cross entropy', self.cross_entropy)
@@ -169,8 +180,9 @@ def train_model(nn, X, y, batch_size=10, batch_count=1000):
                     .format(i, train_logloss, train_accuracy, eval_logloss, eval_accuracy))
                 nn.test_writer.add_summary(summary_str, i)
 
-                save_path = saver.save(sess, model_path)
-                print("Save to path: ", save_path)
+                if i > 0:
+                    save_path = saver.save(sess, model_path)
+                    print("Save to path: ", save_path)
 
             _, summary_str = sess.run([nn.train_step, nn.merged_summary_op],
                     feed_dict=make_feed(nn, batch_xs, batch_ys, 0.5))
@@ -233,6 +245,8 @@ def train(nn):
     nrows = 30
     nrows = None
     training_data = data_helper.load_training_data(tour, nrows=nrows)
+    # training_data = data_helper.get_random_data(nrows=5, nfeat=3)
+    # training_data = data_helper.get_random_data()
 
     frac = None
     #frac = 0.1
@@ -251,9 +265,14 @@ def main():
 
     n_input = 50
     n_out = 2
+    # n_hiddens = []
+    # n_hiddens = [100]
     # n_hiddens = [150, 50]
     # n_hiddens = [300, 100]
-    n_hiddens = [500, 500, 100]
+    # n_hiddens = [500, 100]
+    # n_hiddens = [300, 300, 100]
+    n_hiddens = [40, 20, 10]
+    # n_hiddens = [1000, 1000, 1000, 500, 100]
 
     try:
         mode = sys.argv[1]

@@ -17,6 +17,29 @@ import numpy as np
 
 data_dir_tmplt = '/home/stone/data/numerai/tour{:d}'
 
+def get_random_data(nrows=None, nfeat=50):
+    import numpy.random as r
+
+    if nrows is None:
+        nrows = 393613
+    X = r.randn(nrows, nfeat)
+    # X = np.ones((nrows, nfeat));
+    # print(X)
+    w = r.rand(nfeat)
+    # w = np.ones(nfeat)
+    # print(w)
+    b = r.rand(1)
+    # b = 0.1
+    y = np.matmul(X, w) + b
+    # print(y)
+    y = (y > 0.5)   #.astype(np.int)
+    # print(y)
+    df = pd.DataFrame(np.c_[X, y],
+        columns=['feature' + str(i) for i in range(1, nfeat+1)] + ['target'])
+    df['target'] = df.target.astype(np.int)
+    # print(df)
+    return df
+
 def load_training_data(tour, nrows=None):
     # Set seed for reproducibility
     #np.random.seed(0)
@@ -25,6 +48,7 @@ def load_training_data(tour, nrows=None):
     print("Loading training data from {}".format(fpath))
     # Load the data from the CSV files
     training_data = pd.read_csv(fpath, header=0, nrows=nrows)
+    # print(training_data.dtypes)
 
     return training_data
 
