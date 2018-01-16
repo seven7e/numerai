@@ -1,0 +1,3 @@
+[submodule "jimfleming.numerai"]
+	path = jimfleming.numerai
+	url = git@github.com:jimfleming/numerai.git
