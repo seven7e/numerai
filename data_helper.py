@@ -17,6 +17,10 @@ import numpy as np
 
 data_dir_tmplt = '/home/stone/data/numerai/tour{:d}'
 
+def get_feature_names(training_data):
+    features = [f for f in list(training_data) if "feature" in f]
+    return features
+
 def get_random_data(nrows=None, nfeat=50):
     import numpy.random as r
 
@@ -49,6 +53,8 @@ def load_training_data(tour, nrows=None):
     # Load the data from the CSV files
     training_data = pd.read_csv(fpath, header=0, nrows=nrows)
     # print(training_data.dtypes)
+    print('data size: {}, memory usage: {:,}'.format(training_data.shape,
+        training_data.memory_usage(index=True, deep=True).sum()))
 
     return training_data
 
@@ -58,7 +64,7 @@ def load_training_Xy(tour, nrows=None, onehot=False):
 
 def get_Xy(ds, onehot=False):
     # Transform the loaded CSV data into numpy arrays
-    features = [f for f in list(ds) if "feature" in f]
+    features = get_feature_names(ds)
 
     X = ds[features].as_matrix()
     y = ds["target"].as_matrix()
@@ -69,9 +75,11 @@ def get_Xy(ds, onehot=False):
     return X, y
 
 def load_testing_data(tour, nrows=None):
-    print("Loading testing data from {}".format(fpath))
     fpath = get_data_fpath(tour, 'numerai_tournament_data.csv')
+    print("Loading testing data from {}".format(fpath))
     prediction_data = pd.read_csv(fpath, header=0, nrows=nrows)
+    print('data size: {}, memory usage: {:,}'.format(prediction_data.shape,
+        prediction_data.memory_usage(index=True, deep=True).sum()))
     return prediction_data
 
 def load_testing_Xy(tour, nrows=None, onehot=False):
