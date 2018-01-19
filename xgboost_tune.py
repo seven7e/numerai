@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import xgboost as xgb
 from sklearn import metrics, preprocessing, linear_model
+from sklearn.model_selection import GridSearchCV
 #from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
 
@@ -57,6 +58,33 @@ def modelfit(alg, X, y,
     xgb.plot_importance(alg)
     plt.show()
 
+def tune1(xgb1, X, y):
+    param_test1 = {
+            'max_depth': range(3,10,2),
+            'min_child_weight': range(1,6,2)
+            }
+    gsearch1 = GridSearchCV(estimator =
+            xgb.XGBClassifier(learning_rate =0.1,
+                # TODO: clone xgb1?
+                #n_estimators=140,
+                n_estimators=xgb1.n_estimators,
+                max_depth=5,
+                min_child_weight=1,
+                gamma=0, subsample=0.8, colsample_bytree=0.8,
+                objective= 'binary:logistic',
+                nthread=4,
+                scale_pos_weight=1,
+                seed=27),
+           param_grid = param_test1,
+           #scoring='roc_auc',
+           scoring='neg_log_loss',
+           n_jobs=4,
+           iid=False,
+           verbose=5,
+           cv=5)
+    gsearch1.fit(X, y)
+    print(gsearch1.grid_scores_, gsearch1.best_params_, gsearch1.best_score_)
+
 def main():
     # Set seed for reproducibility
     np.random.seed(0)
@@ -96,7 +124,8 @@ def main():
             nthread=4,
             scale_pos_weight=1,
             seed=27)
-    modelfit(xgb1, X, y)
+    #modelfit(xgb1, X, y)
+    tune1(xgb1, X, y)
 
 if __name__ == '__main__':
     main()
