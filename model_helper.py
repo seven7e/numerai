@@ -29,7 +29,7 @@ def print_perfs(models, perfs):
 
     def print_metrics(met):
         ll, auc, acc = met
-        print('\tlogloss: {:.5f}, AUC: {:.5f}, Accuracy: {:.5f}'.format(ll, auc, acc))
+        print('\tlogloss: {:.7f}, AUC: {:.7f}, Accuracy: {:.7f}'.format(ll, auc, acc))
 
     def print_perf_cv(perf_cv):
         #print(perf_cv)
@@ -48,7 +48,7 @@ def print_perfs(models, perfs):
 
     def print_cv_met(met, typ):
         #print('\t{}:\tmean {}, std {}, detail: {!s:s}'.format(typ, np.mean(met), np.std(met), met))
-        print('\t{}:\tmean {:.5f}, std {:.5f}, detail: {!s:s}'.format(typ, np.mean(met), np.std(met), met))
+        print('\t{}:\tmean {:.7f}, std {:.7f}, detail: {!s:s}'.format(typ, np.mean(met), np.std(met), met))
 
     #for entry in zip(models, perfs):
     #for i, (name1, perf) in enumerate(perfs):

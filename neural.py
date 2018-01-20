@@ -15,25 +15,6 @@ summaries_dir = 'tour{}_logs'.format(tour)
 model_path =  "tour{}_model/save_net.ckpt".format(tour)
 batch_size = 100
 
-def weight_variable(shape):
-    """weight_variable generates a weight variable of a given shape."""
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
-
-def bias_variable(shape):
-    """bias_variable generates a bias variable of a given shape."""
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
-
-def conv2d(x, W):
-    """conv2d returns a 2d convolution layer with full stride."""
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
-
-def max_pool_2x2(x):
-    """max_pool_2x2 downsamples a feature map by 2X."""
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1],
-                        strides=[1, 2, 2, 1], padding='SAME')
-
 #TODO: make it params
 n_hidden1 = 150
 n_hidden2 = 50
@@ -188,57 +169,22 @@ def train_model(nn, X, y, batch_size=10, batch_count=1000):
                     feed_dict=make_feed(nn, batch_xs, batch_ys, 0.5))
             nn.train_writer.add_summary(summary_str, i)
 
-def test(nn):
-    saver = tf.train.Saver()
-    with tf.Session() as sess:
-        saver.restore(sess, model_path)
-        print('model is restored from %s' % model_path)
+# def test(nn):
+#     saver = tf.train.Saver()
+#     with tf.Session() as sess:
+#         saver.restore(sess, model_path)
+#         print('model is restored from %s' % model_path)
 
-        x = mnist.test.images
-        y = mnist.test.labels
-        nb_batches = len(y) // batch_size + 1
-        accuracies = []
-        for i in range(nb_batches):
-            batch_xs, batch_ys = mnist.test.next_batch(batch_size)
-            # # Test trained model
-            accuracies.append(sess.run(nn.accuracy, feed_dict=
-                   make_feed(nn, batch_xs, batch_ys, 1.0)))
-        print('testing accuracy: %g' % np.mean(accuracies))
-
-def plot(nn):
-    saver = tf.train.Saver()
-    with tf.Session() as sess:
-        saver.restore(sess, model_path)
-        print('model is restored from %s' % model_path)
-
-        x = mnist.test.images
-        y = mnist.test.labels
-        nb_batches = len(y) // batch_size
-        x_wrong = []
-        y_wrong = []
-        pred_wrong = []
-        for i in range(nb_batches):
-            batch_xs, batch_ys = mnist.test.next_batch(batch_size)
-            # # Test trained model
-            pred = sess.run(tf.argmax(nn.y_out, 1), feed_dict=
-                   make_feed(nn, batch_xs, batch_ys, 1.0))
-            y2 = np.argmax(batch_ys, axis=1)
-            wrong_index = pred != y2
-            x_wrong.extend(batch_xs[wrong_index])
-            y_wrong.extend(y2[wrong_index])
-            pred_wrong.extend(pred[wrong_index])
-
-        print('plot samples with wrong prediction')
-        import matplotlib.pyplot as plt
-        for i in range(min(len(y_wrong), 96)):
-            image = x_wrong[i].reshape((28, 28))
-            label= y_wrong[i]
-            pred = pred_wrong[i]
-            plt.subplot(8, 12, i + 1)
-            plt.axis('off')
-            plt.imshow(image, cmap=plt.cm.gray_r, interpolation='nearest')
-            plt.title('%i -> %i' % (label, pred))
-        plt.show()
+#         x = mnist.test.images
+#         y = mnist.test.labels
+#         nb_batches = len(y) // batch_size + 1
+#         accuracies = []
+#         for i in range(nb_batches):
+#             batch_xs, batch_ys = mnist.test.next_batch(batch_size)
+#             # # Test trained model
+#             accuracies.append(sess.run(nn.accuracy, feed_dict=
+#                    make_feed(nn, batch_xs, batch_ys, 1.0)))
+#         print('testing accuracy: %g' % np.mean(accuracies))
 
 def train(nn):
 
@@ -288,7 +234,6 @@ def main():
         test(nn)
     elif mode == 'plot':
         plot(nn)
-    return
 
 
 if __name__ == '__main__':

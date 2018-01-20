@@ -20,8 +20,10 @@ from util import Cutter
 from model_helper import eval_predict as eval_one
 from model_helper import print_perfs
 import data_helper
+from hpopt import xgboost_param_convert, SEED
 
-tour = 90
+tour = 89
+# tour = 90
 thr = 0.5
 
 def main():
@@ -73,9 +75,25 @@ def main():
     lr = linear_model.LogisticRegression()
     lr1 = linear_model.LogisticRegression(C=1000)
 
-    xgbr = XGBClassifier()
+    xgbr = XGBClassifier(n_jobs=2)
+    xgbr_linear = XGBClassifier(n_jobs=2, booster='gblinear')
     xgbr2 = XGBClassifier(max_depth=3,
             n_estimators=200)
+
+    xgbr_opt_param = {
+        'eval_metric': 'logloss',
+        'objective': 'binary:logistic',
+        # Increase this number if you have more cores. Otherwise, remove it and it will default
+        # to the maxium number.
+        'nthread': 2,
+        'booster': 'gbtree',
+        'tree_method': 'exact',
+        'silent': 1,
+        'seed': SEED,
+    }
+    tmp = {'eta': 0.07500000000000001, 'n_estimators': 21.0, 'gamma': 0.75, 'colsample_bytree': 0.8500000000000001, 'min_child_weight': 4.0, 'subsample': 0.75, 'max_depth': 3}
+    xgbr_opt_param.update(tmp)
+    xgbr_opt = XGBClassifier(**(xgboost_param_convert(xgbr_opt_param)))
 
     #model = (Cutter(method='qcut', nbins=100),
     #        OneHotEncoder(handle_unknown='ignore'))
@@ -86,8 +104,10 @@ def main():
             #('linear SVC', svc_linear),  too slow
             #('randomforest', rfc),
             #('adaboost', adbr),
-            ('xgb-default', xgbr),
-            ('xgb-200', xgbr),
+            #('xgbr-default', xgbr),
+            ('xgbr-linear', xgbr_linear),
+            # ('xgbr-200', xgbr2),
+            # ('xgbr-opt', xgbr_opt),
             ]
 
     perfs = train_eval_model(models, X, y, prediction_data, features=features)
